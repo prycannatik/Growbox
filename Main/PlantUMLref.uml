@@ -1,4 +1,5 @@
 @startuml
+!theme vibrant
 !define RECTANGLE class
 
 RECTANGLE Setup {
@@ -75,4 +76,5 @@ ReguliereLicht -down-> ÜberprüfePumpenstatus : "Zweiter Schritt"
 ÜberprüfePumpenstatus -down-> AktualisierePh : "Dritter Schritt"
 AktualisierePh -down-> AktualisiereEc : "Vierter Schritt"
 AktualisierePh -right-> KalibrierePhWennAngefordert : ruft bedingt auf
+AktualisiereEc -left-> Hauptschleife
 @enduml
