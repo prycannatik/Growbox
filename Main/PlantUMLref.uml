@@ -1,0 +1,78 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE Setup {
+    :Serial.begin(9600);
+    :Initialisiere Pins;
+    :digitalWrite(PUMP_WATER_PIN, HIGH);
+    :lcd.begin();
+    :lcd.print("Growbox V1.0");
+    :lcd.setCursor(0, 1);
+    :lcd.print("Bitte warten...");
+    :delay(1000);
+}
+
+RECTANGLE Hauptschleife {
+    :Reguliere Licht;
+    :Überprüfe Pumpenstatus;
+    :Aktualisiere pH-Wert;
+    :Aktualisiere EC-Wert;
+    :delay(1000);
+}
+
+RECTANGLE InitialisierePins {
+    :pinMode für alle Pins setzen;
+}
+
+RECTANGLE ReguliereLicht {
+    :Lichtstatus überprüfen;
+    :Licht umschalten wenn nötig;
+    :Aktualisiere lightChangeMillis;
+}
+
+RECTANGLE ÜberprüfePumpenstatus {
+    :PUMP_BUTTON_PIN lesen;
+    :Aktualisiere currentPumpState;
+    :Zeige Pumpenstatus an;
+}
+
+RECTANGLE KalibrierePhWennAngefordert {
+    :Lese PH_CALIBRATION_BUTTON_PIN;
+    if (Button Zustand geändert) then (ja)
+        :Kalibrierung durchführen;
+        :Zeige Ergebnis an;
+    endif
+    :Aktualisiere lastPhCalibrationButtonState;
+}
+
+RECTANGLE AktualisierePh {
+    :KalibrierePhWennAngefordert();
+    :Lese pH-Wert;
+    :Zeige pH-Wert an;
+    if (pH > TARGET_PH_HIGH und Pumpe aktiv) then (ja)
+        :PUMP_ACID_PIN aktivieren;
+        :Warte kurz;
+        :PUMP_ACID_PIN deaktivieren;
+        :Aktualisiere lastAcidPumpMillis;
+    endif
+}
+
+RECTANGLE AktualisiereEc {
+    :Lese EC-Wert;
+    :Zeige EC-Wert an;
+    if (EC < TARGET_EC und Pumpe aktiv) then (ja)
+        :PUMP_DUNGER_PIN aktivieren;
+        :Warte kurz;
+        :PUMP_DUNGER_PIN deaktivieren;
+        :Aktualisiere lastDungerPumpMillis;
+    endif
+}
+
+Setup -down-> Hauptschleife : führt wiederholt aus
+
+Hauptschleife -right-> ReguliereLicht : "Erster Schritt"
+ReguliereLicht -right-> ÜberprüfePumpenstatus : "Zweiter Schritt"
+ÜberprüfePumpenstatus -down-> AktualisierePh : "Dritter Schritt"
+AktualisierePh -right-> AktualisiereEc : "Vierter Schritt"
+AktualisierePh -down-> KalibrierePhWennAngefordert : ruft bedingt auf
+@enduml
