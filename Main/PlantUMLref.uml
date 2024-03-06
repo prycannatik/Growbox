@@ -1,80 +1,82 @@
 @startuml
 !theme vibrant
-!define RECTANGLE class
 
-RECTANGLE Setup {
-    :Serial.begin(9600);
-    :Initialisiere Pins;
-    :digitalWrite(PUMP_WATER_PIN, HIGH);
-    :lcd.begin();
-    :lcd.print("Growbox V1.0");
-    :lcd.setCursor(0, 1);
-    :lcd.print("Bitte warten...");
-    :delay(1000);
+start
+
+:Serial.begin(9600);
+:initializePins();
+:digitalWrite(PUMP_WATER_PIN, HIGH);
+if (lcd.begin()) then (true)
+  :lcd.print("Growbox V1.0");
+endif
+:lcd.setCursor(0, 1);
+:lcd.print("Bitte warten...");
+:delay(1000);
+
+while (true) is (true)
+  :regulateLight();
+  :checkPumpState();
+  :updatePh();
+  :updateEc();
+  :delay(1000);
+endwhile
+stop
+
+partition initializePins {
+  start
+  :Setze Pins als OUTPUT oder INPUT_PULLUP;
+  stop
 }
 
-RECTANGLE Hauptschleife {
-    :Reguliere Licht;
-    :Überprüfe Pumpenstatus;
-    :Aktualisiere pH-Wert;
-    :Aktualisiere EC-Wert;
-    :delay(1000);
-}
-
-RECTANGLE InitialisierePins {
-    :pinMode für alle Pins setzen;
-}
-
-RECTANGLE ReguliereLicht {
-    :Lichtstatus überprüfen;
-    :Licht umschalten wenn nötig;
+partition regulateLight {
+  start
+  if (Lichtzustand soll geändert werden) then (true)
+    :Wechsle Lichtzustand;
     :Aktualisiere lightChangeMillis;
+  endif
+  stop
 }
 
-RECTANGLE ÜberprüfePumpenstatus {
-    :PUMP_BUTTON_PIN lesen;
-    :Aktualisiere currentPumpState;
-    :Zeige Pumpenstatus an;
+partition checkPumpState {
+  start
+  :Lese PUMP_BUTTON_PIN;
+  :Aktualisiere currentPumpState;
+  :Zeige Pumpenstatus an;
+  stop
 }
 
-RECTANGLE KalibrierePhWennAngefordert {
-    :Lese PH_CALIBRATION_BUTTON_PIN;
-    if (Button Zustand geändert) then (ja)
-        :Kalibrierung durchführen;
-        :Zeige Ergebnis an;
-    endif
-    :Aktualisiere lastPhCalibrationButtonState;
+partition updatePh {
+  start
+  :calibratePhIfRequested();
+  :Lese und berechne aktuellen pH-Wert;
+  if (Bedingungen für Säurepumpe erfüllt) then (true)
+    :Aktiviere PUMP_ACID_PIN;
+    :Warte 3 Sekunden;
+    :Deaktiviere PUMP_ACID_PIN;
+    :Aktualisiere lastAcidPumpMillis;
+  endif
+  stop
 }
 
-RECTANGLE AktualisierePh {
-    :KalibrierePhWennAngefordert();
-    :Lese pH-Wert;
-    :Zeige pH-Wert an;
-    if (pH > TARGET_PH_HIGH und Pumpe aktiv) then (ja)
-        :PUMP_ACID_PIN aktivieren;
-        :Warte kurz;
-        :PUMP_ACID_PIN deaktivieren;
-        :Aktualisiere lastAcidPumpMillis;
-    endif
+partition calibratePhIfRequested {
+  start
+  if (Kalibrierungsanforderung detektiert) then (true)
+    :Führe Kalibrierung durch;
+    :Zeige neuen Offset an;
+  endif
+  stop
 }
 
-RECTANGLE AktualisiereEc {
-    :Lese EC-Wert;
-    :Zeige EC-Wert an;
-    if (EC < TARGET_EC und Pumpe aktiv) then (ja)
-        :PUMP_DUNGER_PIN aktivieren;
-        :Warte kurz;
-        :PUMP_DUNGER_PIN deaktivieren;
-        :Aktualisiere lastDungerPumpMillis;
-    endif
+partition updateEc {
+  start
+  :Lese und berechne aktuellen EC-Wert;
+  if (Bedingungen für Düngerpumpe erfüllt) then (true)
+    :Aktiviere PUMP_DUNGER_PIN;
+    :Warte 5 Sekunden;
+    :Deaktiviere PUMP_DUNGER_PIN;
+    :Aktualisiere lastDungerPumpMillis;
+  endif
+  stop
 }
 
-Setup -down-> Hauptschleife : führt wiederholt aus
-Setup -right-> InitialisierePins : initial Aufruf
-Hauptschleife -right-> ReguliereLicht : "Erster Schritt"
-ReguliereLicht -down-> ÜberprüfePumpenstatus : "Zweiter Schritt"
-ÜberprüfePumpenstatus -down-> AktualisierePh : "Dritter Schritt"
-AktualisierePh -down-> AktualisiereEc : "Vierter Schritt"
-AktualisierePh -right-> KalibrierePhWennAngefordert : ruft bedingt auf
-AktualisiereEc -left-> Hauptschleife
 @enduml
