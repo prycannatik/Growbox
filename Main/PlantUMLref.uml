@@ -69,10 +69,10 @@ RECTANGLE AktualisiereEc {
 }
 
 Setup -down-> Hauptschleife : führt wiederholt aus
-
+Setup -right-> InitialisierePins : initial Aufruf
 Hauptschleife -right-> ReguliereLicht : "Erster Schritt"
-ReguliereLicht -right-> ÜberprüfePumpenstatus : "Zweiter Schritt"
+ReguliereLicht -down-> ÜberprüfePumpenstatus : "Zweiter Schritt"
 ÜberprüfePumpenstatus -down-> AktualisierePh : "Dritter Schritt"
-AktualisierePh -right-> AktualisiereEc : "Vierter Schritt"
-AktualisierePh -down-> KalibrierePhWennAngefordert : ruft bedingt auf
+AktualisierePh -down-> AktualisiereEc : "Vierter Schritt"
+AktualisierePh -right-> KalibrierePhWennAngefordert : ruft bedingt auf
 @enduml
