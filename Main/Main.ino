@@ -8,6 +8,8 @@ void initializePins() {
   pinMode(PUMP_DUNGER_PIN, OUTPUT);
   pinMode(PUMP_WATER_PIN, OUTPUT);
   pinMode(PUMP_ACID_PIN, OUTPUT);
+  pinMode(PH_POWER, OUTPUT);
+  pinMode(EC_POWER, OUTPUT);
   pinMode(PH_CALIBRATION_BUTTON_PIN, INPUT_PULLUP);
   pinMode(PUMP_BUTTON_PIN, INPUT_PULLUP);
 }
@@ -15,8 +17,7 @@ void initializePins() {
 void setup() {
   Serial.begin(9600);
   initializePins();
-  // initializeCalibration();
-  digitalWrite(PUMP_WATER_PIN, HIGH);  // Turn on water relay at startup
+  digitalWrite(PUMP_WATER_PIN, HIGH);  // Wasser soll immer eingeschaltet sein
   if (lcd.begin()) lcd.print("Growbox V1.0");
   lcd.setCursor(0, 1);
   lcd.print("Bitte warten...");
@@ -47,9 +48,9 @@ void calibratePhIfRequested() {
     lcd.setCursor(0, 0);
     lcd.print("Kalibrierung...    ");
     delay(1000); 
-    float currentVoltage = analogRead(pHpin) * (5.0 / 1023.0);
 
-    phCalibrationOffset = 7 - (mapfloat(analogRead(pHpin), 765, 665, 4.01, 7.01));
+    phCalibrationOffset = 7 - (mapfloat(analogRead(PH_PIN), ph4ReadValue, ph7ReadValue, 4.01, 7.01));
+    ph7ReadValue = analogRead(PH_PIN);
 
     lcd.setCursor(0, 0);
     lcd.print("Offset: ");
@@ -63,8 +64,12 @@ void calibratePhIfRequested() {
 
 // pH regulation function
 void updatePh() {
+  digitalWrite(EC_POWER, LOW); //PH und EC dürfen nie gleichzeitig strom haben
+  delay(1000);
+  digitalWrite(PH_POWER, HIGH);
+  delay(1000);
   calibratePhIfRequested();
-  currentPhValue = mapfloat(analogRead(pHpin), 765, 665, 4.01, 7.01); 
+  currentPhValue = mapfloat(analogRead(PH_PIN), ph4ReadValue, ph7ReadValue, 4.01, 7.01);
 
   lcd.setCursor(0, 0);
   lcd.print("PH ");
@@ -83,12 +88,17 @@ void updatePh() {
 }
 
 //Manuell Gemessene Werte umwandeln
-float mapfloat(long x, long in_min, long in_max, long out_min, long out_max){
- return (float)(x - in_min) * (out_max - out_min) / (float)(in_max - in_min) + out_min;
+float mapfloat(long x, long in_min, long in_max, float out_min, float out_max) {
+  return (float)(x - in_min) * (out_max - out_min) / (float)(in_max - in_min) + out_min;
 }
 
+
 void updateEc() {
-  int sensorValueEC = analogRead(ECpin);
+  digitalWrite(PH_POWER, LOW);
+  delay(1000);
+  digitalWrite(EC_POWER, HIGH);
+  delay(1000);
+  int sensorValueEC = analogRead(EC_PIN);
   float voltageEC = sensorValueEC * (5.0 / 1023.0);
   float EC = voltageEC;
 
