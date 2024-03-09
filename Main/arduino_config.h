@@ -2,8 +2,11 @@
 #define ARDUINO_CONFIG_H
 
 // Pin definitions
-const int pHpin = A0;
-const int ECpin = A1;
+const int PH_PIN = A0;
+const int PH_POWER = 5;
+const int EC_PIN = A1;
+const int EC_POWER = 6;
+
 const int LIGHT_RELAY_PIN = 7;             
 const int PUMP_DUNGER_PIN = 8;             
 const int PUMP_WATER_PIN = 9;              
@@ -19,6 +22,9 @@ const float TARGET_PH_HIGH = 6.2;
 // PH Calibration Offset
 float phCalibrationOffset = 0;
 float currentPhValue = 7;
+float ph7ReadValue = 665;
+float ph4ReadValue = 765;
+
 
 // Light cycle in hours
 const long LIGHT_ON_HOURS = 16;
